@@ -13,21 +13,32 @@ class TableViewController: UITableViewController {
 
     private var reachability: NetworkReachabilityManager!
     
+    let refreshController = UIRefreshControl.init()
+    
     var arrData : [model] = [model]()
     var pageCount : Int = 1
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        monitorReachability()
-
+        reachability = NetworkReachabilityManager.init()
+        reachability.startListening()
         self.pageCount = 1
         self.fetchDatafromAPI(page: pageCount)
+        
+        self.refreshController.addTarget(self, action: #selector(handleRefresh), for: UIControl.Event.valueChanged)
+        self.tableView.addSubview(self.refreshController)
+        
+    }
+    
+    @objc func handleRefresh(){
+          self.refreshController.endRefreshing()
+          self.pageCount = 1
+          self.fetchDatafromAPI(page: pageCount)
     }
     
     // MARK: - Table view data source
     override func numberOfSections(in tableView: UITableView) -> Int {
         // #warning Incomplete implementation, return the number of sections
-        self.showDisplayCellCount()
         return 1
     }
 
@@ -39,11 +50,10 @@ class TableViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 
-        if (indexPath.row == self.arrData.count - 5){
+        if (indexPath.row == self.arrData.count - 3){
             self.fetchDatafromAPI(page: self.pageCount + 1)
         }
-        
-        
+    
         let cellVi = Int (tableView.frame.height/85)
        
         self.navigationItem.title = "VisibleCell \(cellVi) arrayCount = \(self.arrData.count)"
@@ -72,26 +82,27 @@ class TableViewController: UITableViewController {
 
 extension TableViewController {
     
-    // MARK: - Private - Reachability
-    private func monitorReachability() {
-    
-//        NetworkReachabilityManager.init()?.startListening(){ status in
-//             print("Reachability Status Changed: \(status)")
-//        }
-       
-    }
-
     func fetchDatafromAPI(page : Int = 1) {
         
-        let strUrl = "https://hn.algolia.com/api/v1/search_by_date?tags=story&page=\(page)"
-        
-        if (page == 1){
-           self.arrData.removeAll()
+        if !reachability.isReachable {
+            refreshController.endRefreshing()
+            let alert : UIAlertController =  UIAlertController.init(title: "No network", message: "No Network Connecction", preferredStyle: .alert)
+            alert.addAction(UIAlertAction.init(title: "OK", style: .cancel, handler: nil))
+            self.navigationController?.visibleViewController?.present(alert, animated: true, completion: nil)
+            return
         }
         
+        if (page == 1){
+            self.arrData.removeAll()
+            self.tableView.reloadData()
+        }
+        
+        
+        let strUrl = "https://hn.algolia.com/api/v1/search_by_date?tags=story&page=\(page)"
+    
         Alamofire.request(strUrl, method: .get, parameters: nil ,encoding: JSONEncoding.default).responseJSON {
             response in
-            
+            self.refreshController.endRefreshing()
             switch response.result {
             case .success:
                 print(response)
@@ -113,7 +124,7 @@ extension TableViewController {
     }
     
     func parseAPIResponce(dict : [String : Any], page : Int) {
-        
+    
         if let arr = dict["hits"] as? [[String:Any]]{
             self.pageCount = page
             for dataDict in arr {
@@ -121,9 +132,7 @@ extension TableViewController {
                 self.arrData.append(obj)
             }
         }
-        
         self.tableView.reloadData()
-        self.showDisplayCellCount()
         if self.arrData.count > 0 {
             print("\n data count = \(self.arrData.count)")
         }else{
@@ -131,8 +140,5 @@ extension TableViewController {
         }
     }
     
-    func showDisplayCellCount() {
-        let array = self.tableView.indexPathsForVisibleRows
-        //self.navigationItem.title = "Table \(array?.count ?? 0) / \(self.arrData.count)"
-    }
+ 
 }
