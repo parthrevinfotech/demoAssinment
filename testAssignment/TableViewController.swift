@@ -12,9 +12,7 @@ import Alamofire
 class TableViewController: UITableViewController {
 
     private var reachability: NetworkReachabilityManager!
-    
     let refreshController = UIRefreshControl.init()
-    
     var arrData : [model] = [model]()
     var pageCount : Int = 1
     
@@ -139,6 +137,4 @@ extension TableViewController {
             print("\n no data found")
         }
     }
-    
- 
 }
