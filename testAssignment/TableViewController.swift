@@ -43,6 +43,12 @@ class TableViewController: UITableViewController {
             self.fetchDatafromAPI(page: self.pageCount + 1)
         }
         
+        
+        let cellVi = Int (tableView.frame.height/85)
+       
+        self.navigationItem.title = "VisibleCell \(cellVi) arrayCount = \(self.arrData.count)"
+        
+        
         if let cell : CustomCellTableViewCell = tableView.dequeueReusableCell(withIdentifier: "CustomCellTableViewCell", for: indexPath) as? CustomCellTableViewCell{
             
             let obj = arrData[indexPath.row]
@@ -127,6 +133,6 @@ extension TableViewController {
     
     func showDisplayCellCount() {
         let array = self.tableView.indexPathsForVisibleRows
-        self.navigationItem.title = "Table \(array?.count ?? 0) / \(self.arrData.count))"
+        //self.navigationItem.title = "Table \(array?.count ?? 0) / \(self.arrData.count)"
     }
 }
